@@ -1,7 +1,7 @@
 "use strict";
 
 const REQUIRED_CONFIG_KEYS = ["GOOGLE_CLIENT_ID", "SHEET_ID", "SHEET_NAME"];
-const DEFAULT_RANGE = "A:E";
+const DEFAULT_RANGE = "A:F";
 
 const state = {
   tokenClient: null,
@@ -37,6 +37,7 @@ const ui = {
   fieldTaste: document.getElementById("field-taste"),
   fieldRoast: document.getElementById("field-roast"),
   fieldNotes: document.getElementById("field-notes"),
+  fieldActive: document.getElementById("field-active"),
 };
 
 function getConfig() {
@@ -124,14 +125,20 @@ async function loadAllData() {
   const data = await apiFetch(url);
   const values = data.values || [];
   const headers = values[0] || [];
+  if (headers.length && headers[0] !== "Active") {
+    throw new Error(
+      "Expected column A header to be 'Active'. Please add an 'Active' column as the first header."
+    );
+  }
   const rows = values.slice(1).map((row, index) => {
     return {
       rowIndex: index + 2,
-      Decaf: row[0] || "",
-      "Grind setting": row[1] || "",
-      Notes: row[2] || "",
-      Taste: row[3] || "",
-      Roast: row[4] || "",
+      Active: normalizeActive(row[0]),
+      Decaf: row[1] || "",
+      "Grind setting": row[2] || "",
+      Notes: row[3] || "",
+      Taste: row[4] || "",
+      Roast: row[5] || "",
     };
   });
   state.rows = rows;
@@ -173,6 +180,9 @@ function applyFilters() {
 
   const sortKey = ui.sort.value;
   const sorted = [...state.filteredRows].sort((a, b) => {
+    if (a.Active !== b.Active) {
+      return a.Active ? -1 : 1;
+    }
     if (sortKey === "taste") {
       return (parseFloat(b.Taste) || 0) - (parseFloat(a.Taste) || 0);
     }
@@ -205,6 +215,7 @@ function render() {
   state.filteredRows.forEach((row) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
+      <td>${row.Active ? "Active" : "Inactive"}</td>
       <td>${escapeHtml(row.Decaf)}</td>
       <td>${escapeHtml(row["Grind setting"])}</td>
       <td>${escapeHtml(row.Taste)}</td>
@@ -232,6 +243,7 @@ function openModal(row) {
   ui.fieldTaste.value = row ? row.Taste : "";
   ui.fieldRoast.value = row ? row.Roast : "";
   ui.fieldNotes.value = row ? row.Notes : "";
+  ui.fieldActive.value = row && !row.Active ? "FALSE" : "TRUE";
   ui.delete.classList.toggle("hidden", !row);
   ui.modalHint.textContent = state.isOffline
     ? "Offline mode: edits disabled until you reconnect."
@@ -245,6 +257,7 @@ function closeModal() {
 
 function getRowPayload() {
   return [
+    ui.fieldActive.value,
     ui.fieldDecaf.value.trim(),
     ui.fieldGrind.value.trim(),
     ui.fieldNotes.value.trim(),
@@ -275,7 +288,7 @@ async function updateRow() {
   }
   const rowIndex = state.editingRow.rowIndex;
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.SHEET_ID}/values/${encodeURIComponent(
-    `${config.SHEET_NAME}!A${rowIndex}:E${rowIndex}`
+    `${config.SHEET_NAME}!A${rowIndex}:F${rowIndex}`
   )}?valueInputOption=USER_ENTERED`;
   await apiFetch(url, {
     method: "PUT",
@@ -423,6 +436,17 @@ function initCacheView() {
     render();
     setOffline(!navigator.onLine);
   }
+}
+
+function normalizeActive(value) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  const text = String(value || "").trim().toLowerCase();
+  if (text === "" || text === "true" || text === "yes" || text === "1") {
+    return true;
+  }
+  return false;
 }
 
 function registerServiceWorker() {

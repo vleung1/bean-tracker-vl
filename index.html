@@ -70,6 +70,7 @@
             <table>
               <thead>
                 <tr>
+                  <th>Active</th>
                   <th>Decaf</th>
                   <th>Grind setting</th>
                   <th>Taste</th>
@@ -97,6 +98,13 @@
           <button id="btn-close" class="ghost">Close</button>
         </div>
         <form id="bean-form">
+          <label>
+            Active
+            <select id="field-active">
+              <option value="TRUE">Active</option>
+              <option value="FALSE">Inactive</option>
+            </select>
+          </label>
           <label>
             Decaf
             <input id="field-decaf" type="text" required />
