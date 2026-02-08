@@ -1,0 +1,16 @@
+{
+  "name": "Coffee Bean Tracker",
+  "short_name": "Coffee Tracker",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f4efe7",
+  "theme_color": "#1e1a14",
+  "description": "Track coffee beans, grind settings, and tasting notes.",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='32' fill='%23e07a2f'/><path d='M56 72h64a24 24 0 0 1 0 48H56z' fill='%23fffaf3'/><path d='M120 80h10a18 18 0 0 1 0 32h-10' fill='none' stroke='%23fffaf3' stroke-width='10' stroke-linecap='round'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}
