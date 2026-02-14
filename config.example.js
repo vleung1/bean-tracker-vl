@@ -1,6 +1,4 @@
 window.CONFIG = {
-  GOOGLE_CLIENT_ID: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
-  SHEET_ID: "YOUR_SHEET_ID",
-  SHEET_NAME: "YOUR_SHEET_TAB_NAME",
-  SHEET_RANGE: "A:F"
+  API_URL: "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec",
+  API_TOKEN: "replace-with-a-long-random-secret"
 };

@@ -1,30 +1,46 @@
 # Coffee Bean Tracker
 
-Lightweight PWA that reads/writes your Google Sheet (OAuth) to track beans, grind settings, and tasting notes.
+Lightweight PWA for tracking beans, grind settings, and tasting notes from one Google Sheet.
 
-## Setup
-1. Copy `config.example.js` to `config.js`.
-2. Fill in `GOOGLE_CLIENT_ID`, `SHEET_ID`, `SHEET_NAME`.
-3. Serve locally with any static server.
+## Current Architecture
+- Frontend (`index.html`, `app.js`) calls an Apps Script web endpoint.
+- Apps Script reads/writes sheet rows.
+- No Google sign-in flow in the app UI.
 
-## Google OAuth (required)
-- Create a Google Cloud project.
-- Enable Google Sheets API.
-- Configure OAuth consent screen.
-- Create OAuth Client ID (Web).
-- Authorized JavaScript origins:
-  - `http://localhost:5173` (or your local dev server)
-  - Your GitHub Pages HTTPS origin.
+## 1) Sheet Requirements
+Use this exact header row in tab `ECM`:
 
-## GitHub Pages
-- Repo: `bean-tracker-vl`
-- Pages source: `main` branch, `/` (root)
+`Active | Decaf | Grind setting | Notes | Taste | Roast`
 
-## Deploy
-- Commit and push to GitHub.
-- In repo settings, enable GitHub Pages (branch `main`, folder `/`).
-- Visit the Pages URL and sign in.
+## 2) Deploy Apps Script Backend
+1. Open [script.new](https://script.new) while signed into your Google account.
+2. Replace default code with `/Users/vleung1/Documents/New project/apps-script/Code.gs`.
+3. In `SETTINGS`, fill:
+- `SHEET_ID`
+- `SHEET_NAME` (currently `ECM`)
+- `API_TOKEN` (long random string)
+4. Save.
+5. Deploy -> New deployment -> Type: `Web app`.
+6. Execute as: `Me`.
+7. Who has access: `Anyone`.
+8. Deploy and copy the `Web app URL`.
+
+## 3) Configure Frontend
+Edit `/Users/vleung1/Documents/New project/config.js`:
+
+```js
+window.CONFIG = {
+  API_URL: "https://script.google.com/macros/s/DEPLOYMENT_ID/exec",
+  API_TOKEN: "same-token-used-in-apps-script"
+};
+```
+
+## 4) Deploy Frontend
+1. Commit and push to `main`.
+2. GitHub Pages serves from root (`/`).
+3. Open [https://vleung1.github.io/bean-tracker-vl/](https://vleung1.github.io/bean-tracker-vl/).
 
 ## Notes
-- Offline mode uses cached data (read-only).
-- Delete/edit actions are disabled when offline.
+- App caches last successful dataset for offline read.
+- Add/Edit/Delete disabled while offline.
+- If you change Apps Script code later, create a new deployment version and update `API_URL` only if deployment ID changes.

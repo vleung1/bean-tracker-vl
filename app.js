@@ -1,12 +1,8 @@
 "use strict";
 
-const REQUIRED_CONFIG_KEYS = ["GOOGLE_CLIENT_ID", "SHEET_ID", "SHEET_NAME"];
-const DEFAULT_RANGE = "A:F";
+const REQUIRED_CONFIG_KEYS = ["API_URL", "API_TOKEN"];
 
 const state = {
-  tokenClient: null,
-  accessToken: null,
-  sheetId: null,
   rows: [],
   filteredRows: [],
   editingRow: null,
@@ -15,8 +11,6 @@ const state = {
 
 const ui = {
   statusPill: document.getElementById("status-pill"),
-  signIn: document.getElementById("btn-signin"),
-  signOut: document.getElementById("btn-signout"),
   refresh: document.getElementById("btn-refresh"),
   add: document.getElementById("btn-add"),
   search: document.getElementById("search-input"),
@@ -47,120 +41,68 @@ function getConfig() {
     throw new Error(`Missing config keys: ${missing.join(", ")}`);
   }
   return {
-    GOOGLE_CLIENT_ID: config.GOOGLE_CLIENT_ID,
-    SHEET_ID: config.SHEET_ID,
-    SHEET_NAME: config.SHEET_NAME,
-    SHEET_RANGE: config.SHEET_RANGE || DEFAULT_RANGE,
+    API_URL: config.API_URL,
+    API_TOKEN: config.API_TOKEN,
   };
 }
 
-function setStatus(text, isAuthed) {
+function setStatus(text) {
   ui.statusPill.textContent = text;
-  ui.signIn.disabled = !!isAuthed;
-  ui.signOut.disabled = !isAuthed;
-  ui.refresh.disabled = !isAuthed;
-  ui.add.disabled = !isAuthed || state.isOffline;
 }
 
 function setOffline(isOffline) {
   state.isOffline = isOffline;
   document.body.classList.toggle("offline", isOffline);
   if (isOffline) {
-    setStatus("Offline (cached)", state.accessToken);
+    setStatus("Offline (cached)");
     ui.add.disabled = true;
-  } else if (state.accessToken) {
-    setStatus("Signed in", true);
+    ui.refresh.disabled = true;
+  } else {
+    setStatus("Connected");
     ui.add.disabled = false;
+    ui.refresh.disabled = false;
   }
 }
 
-function initAuth() {
+async function apiRequest(action, payload = {}) {
   const config = getConfig();
-  state.tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: config.GOOGLE_CLIENT_ID,
-    scope: "https://www.googleapis.com/auth/spreadsheets",
-    callback: (response) => {
-      if (response && response.access_token) {
-        state.accessToken = response.access_token;
-        setStatus("Signed in", true);
-        setOffline(!navigator.onLine);
-        loadAllData().catch(showError);
-      }
+  const response = await fetch(config.API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
     },
+    body: JSON.stringify({
+      token: config.API_TOKEN,
+      action,
+      ...payload,
+    }),
   });
-}
 
-function signIn() {
-  state.tokenClient.requestAccessToken({ prompt: "consent" });
-}
-
-function signOut() {
-  state.accessToken = null;
-  setStatus("Signed out", false);
-  state.rows = [];
-  render();
-}
-
-async function apiFetch(url, options = {}) {
-  if (!state.accessToken) {
-    throw new Error("Not signed in");
-  }
-  const headers = Object.assign({}, options.headers, {
-    Authorization: `Bearer ${state.accessToken}`,
-  });
-  const response = await fetch(url, { ...options, headers });
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || response.statusText);
+    throw new Error(`Request failed (${response.status})`);
   }
-  return response.json();
+
+  const data = await response.json();
+  if (!data.ok) {
+    throw new Error(data.error || "Unknown backend error");
+  }
+  return data;
 }
 
 async function loadAllData() {
-  const config = getConfig();
-  const range = `${config.SHEET_NAME}!${config.SHEET_RANGE}`;
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.SHEET_ID}/values/${encodeURIComponent(
-    range
-  )}`;
-  const data = await apiFetch(url);
-  const values = data.values || [];
-  const headers = values[0] || [];
-  if (headers.length && headers[0] !== "Active") {
-    throw new Error(
-      "Expected column A header to be 'Active'. Please add an 'Active' column as the first header."
-    );
-  }
-  const rows = values.slice(1).map((row, index) => {
-    return {
-      rowIndex: index + 2,
-      Active: normalizeActive(row[0]),
-      Decaf: row[1] || "",
-      "Grind setting": row[2] || "",
-      Notes: row[3] || "",
-      Taste: row[4] || "",
-      Roast: row[5] || "",
-    };
-  });
-  state.rows = rows;
-  saveCache({ headers, rows });
-  await ensureSheetId(config);
-  render();
-}
+  const data = await apiRequest("list");
+  state.rows = (data.rows || []).map((row) => ({
+    rowIndex: Number(row.rowIndex),
+    Active: normalizeActive(row.Active),
+    Decaf: row.Decaf || "",
+    "Grind setting": row["Grind setting"] || "",
+    Notes: row.Notes || "",
+    Taste: row.Taste || "",
+    Roast: row.Roast || "",
+  }));
 
-async function ensureSheetId(config) {
-  if (state.sheetId) {
-    return state.sheetId;
-  }
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.SHEET_ID}?fields=sheets.properties`;
-  const data = await apiFetch(url);
-  const sheet = (data.sheets || []).find(
-    (item) => item.properties && item.properties.title === config.SHEET_NAME
-  );
-  if (!sheet) {
-    throw new Error(`Sheet tab not found: ${config.SHEET_NAME}`);
-  }
-  state.sheetId = sheet.properties.sheetId;
-  return state.sheetId;
+  saveCache({ rows: state.rows });
+  render();
 }
 
 function applyFilters() {
@@ -188,6 +130,9 @@ function applyFilters() {
     }
     if (sortKey === "grind") {
       return (parseFloat(a["Grind setting"]) || 0) - (parseFloat(b["Grind setting"]) || 0);
+    }
+    if (sortKey === "roast") {
+      return String(a.Roast).localeCompare(String(b.Roast));
     }
     return String(a.Decaf).localeCompare(String(b.Decaf));
   });
@@ -247,7 +192,7 @@ function openModal(row) {
   ui.delete.classList.toggle("hidden", !row);
   ui.modalHint.textContent = state.isOffline
     ? "Offline mode: edits disabled until you reconnect."
-    : "Changes are saved to your Google Sheet.";
+    : "Changes are saved via the sheet API backend.";
   ui.modal.classList.remove("hidden");
 }
 
@@ -255,87 +200,51 @@ function closeModal() {
   ui.modal.classList.add("hidden");
 }
 
-function getRowPayload() {
-  return [
-    ui.fieldActive.value,
-    ui.fieldDecaf.value.trim(),
-    ui.fieldGrind.value.trim(),
-    ui.fieldNotes.value.trim(),
-    ui.fieldTaste.value.trim(),
-    ui.fieldRoast.value.trim(),
-  ];
+function getRowData() {
+  return {
+    Active: ui.fieldActive.value,
+    Decaf: ui.fieldDecaf.value.trim(),
+    "Grind setting": ui.fieldGrind.value.trim(),
+    Notes: ui.fieldNotes.value.trim(),
+    Taste: ui.fieldTaste.value.trim(),
+    Roast: ui.fieldRoast.value.trim(),
+  };
 }
 
 async function addRow() {
-  const config = getConfig();
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.SHEET_ID}/values/${encodeURIComponent(
-    `${config.SHEET_NAME}!${config.SHEET_RANGE}`
-  )}:append?valueInputOption=USER_ENTERED`;
-  await apiFetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ values: [getRowPayload()] }),
-  });
+  await apiRequest("add", { row: getRowData() });
   await loadAllData();
 }
 
 async function updateRow() {
-  const config = getConfig();
   if (!state.editingRow) {
     return;
   }
-  const rowIndex = state.editingRow.rowIndex;
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.SHEET_ID}/values/${encodeURIComponent(
-    `${config.SHEET_NAME}!A${rowIndex}:F${rowIndex}`
-  )}?valueInputOption=USER_ENTERED`;
-  await apiFetch(url, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ values: [getRowPayload()] }),
+  await apiRequest("update", {
+    rowIndex: state.editingRow.rowIndex,
+    row: getRowData(),
   });
   await loadAllData();
 }
 
 async function deleteRow() {
-  const config = getConfig();
   if (!state.editingRow) {
     return;
   }
-  await ensureSheetId(config);
-  const rowIndex = state.editingRow.rowIndex;
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.SHEET_ID}:batchUpdate`;
-  await apiFetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      requests: [
-        {
-          deleteDimension: {
-            range: {
-              sheetId: state.sheetId,
-              dimension: "ROWS",
-              startIndex: rowIndex - 1,
-              endIndex: rowIndex,
-            },
-          },
-        },
-      ],
-    }),
+  await apiRequest("delete", {
+    rowIndex: state.editingRow.rowIndex,
   });
   await loadAllData();
 }
 
 function saveCache(payload) {
-  localStorage.setItem("coffeeCache", JSON.stringify({
-    savedAt: new Date().toISOString(),
-    payload,
-  }));
+  localStorage.setItem(
+    "coffeeCache",
+    JSON.stringify({
+      savedAt: new Date().toISOString(),
+      payload,
+    })
+  );
 }
 
 function loadCache() {
@@ -352,7 +261,7 @@ function loadCache() {
 
 function showError(error) {
   console.error(error);
-  ui.statusPill.textContent = "Error";
+  setStatus("Error");
   alert(String(error.message || error));
 }
 
@@ -364,8 +273,6 @@ function escapeHtml(value) {
 }
 
 function registerEvents() {
-  ui.signIn.addEventListener("click", signIn);
-  ui.signOut.addEventListener("click", signOut);
   ui.refresh.addEventListener("click", () => loadAllData().catch(showError));
   ui.add.addEventListener("click", () => openModal());
   ui.close.addEventListener("click", closeModal);
@@ -425,7 +332,10 @@ function registerEvents() {
     }
   });
 
-  window.addEventListener("online", () => setOffline(false));
+  window.addEventListener("online", () => {
+    setOffline(false);
+    loadAllData().catch(showError);
+  });
   window.addEventListener("offline", () => setOffline(true));
 }
 
@@ -434,7 +344,6 @@ function initCacheView() {
   if (cached) {
     state.rows = cached.rows || [];
     render();
-    setOffline(!navigator.onLine);
   }
 }
 
@@ -459,18 +368,18 @@ function init() {
   try {
     getConfig();
   } catch (error) {
-    ui.statusPill.textContent = "Missing config";
+    setStatus("Missing config");
     alert(String(error.message || error));
     return;
   }
+
   registerEvents();
   initCacheView();
   registerServiceWorker();
-  setStatus("Signed out", false);
-  if (window.google && google.accounts) {
-    initAuth();
-  } else {
-    window.addEventListener("load", initAuth, { once: true });
+  setOffline(!navigator.onLine);
+
+  if (!state.isOffline) {
+    loadAllData().catch(showError);
   }
 }
 
