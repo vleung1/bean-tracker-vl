@@ -69,7 +69,7 @@ async function apiRequest(action, payload = {}) {
   const response = await fetch(config.API_URL, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": "text/plain;charset=utf-8",
     },
     body: JSON.stringify({
       token: config.API_TOKEN,
