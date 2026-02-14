@@ -8,6 +8,7 @@ const state = {
   editingRow: null,
   isOffline: false,
   beanLabel: "Bean",
+  activeFilter: "all",
 };
 
 const ui = {
@@ -16,9 +17,12 @@ const ui = {
   add: document.getElementById("btn-add"),
   search: document.getElementById("search-input"),
   roastFilter: document.getElementById("roast-filter"),
-  notesFilter: document.getElementById("notes-filter"),
   sort: document.getElementById("sort-select"),
   summary: document.getElementById("summary"),
+  activeSummary: document.getElementById("active-summary"),
+  chipAll: document.getElementById("chip-all"),
+  chipActive: document.getElementById("chip-active"),
+  chipInactive: document.getElementById("chip-inactive"),
   tableBody: document.getElementById("table-body"),
   empty: document.getElementById("empty-state"),
   colBeanLabel: document.getElementById("col-bean-label"),
@@ -121,7 +125,6 @@ async function loadAllData() {
 function applyFilters() {
   const query = ui.search.value.trim().toLowerCase();
   const roast = ui.roastFilter.value;
-  const notesOnly = ui.notesFilter.checked;
 
   state.filteredRows = state.rows.filter((row) => {
     const matchesQuery =
@@ -129,8 +132,11 @@ function applyFilters() {
       row.Bean.toLowerCase().includes(query) ||
       row.Notes.toLowerCase().includes(query);
     const matchesRoast = !roast || row.Roast === roast;
-    const matchesNotes = !notesOnly || row.Notes.trim().length > 0;
-    return matchesQuery && matchesRoast && matchesNotes;
+    const matchesActive =
+      state.activeFilter === "all" ||
+      (state.activeFilter === "active" && row.Active) ||
+      (state.activeFilter === "inactive" && !row.Active);
+    return matchesQuery && matchesRoast && matchesActive;
   });
 
   const sortKey = ui.sort.value;
@@ -157,6 +163,19 @@ function applyColumnLabels() {
   ui.fieldBeanLabel.textContent = state.beanLabel;
 }
 
+function renderActiveSummary() {
+  const activeCount = state.rows.filter((row) => row.Active).length;
+  const inactiveCount = state.rows.length - activeCount;
+  ui.activeSummary.textContent = `Active: ${activeCount} | Inactive: ${inactiveCount}`;
+}
+
+function renderActiveChips() {
+  const chips = [ui.chipAll, ui.chipActive, ui.chipInactive];
+  chips.forEach((chip) => {
+    chip.classList.toggle("is-selected", chip.dataset.activeFilter === state.activeFilter);
+  });
+}
+
 function updateRoastFilter() {
   const roasts = [...new Set(state.rows.map((row) => row.Roast).filter(Boolean))].sort();
   const current = ui.roastFilter.value;
@@ -172,12 +191,15 @@ function updateRoastFilter() {
 
 function render() {
   applyColumnLabels();
+  renderActiveSummary();
+  renderActiveChips();
   updateRoastFilter();
   applyFilters();
 
   ui.tableBody.innerHTML = "";
   state.filteredRows.forEach((row) => {
     const tr = document.createElement("tr");
+    tr.className = row.Active ? "row-active" : "row-inactive";
     tr.innerHTML = `
       <td>${row.Active ? "Active" : "Inactive"}</td>
       <td>${escapeHtml(row.Bean)}</td>
@@ -338,8 +360,13 @@ function registerEvents() {
 
   ui.search.addEventListener("input", render);
   ui.roastFilter.addEventListener("change", render);
-  ui.notesFilter.addEventListener("change", render);
   ui.sort.addEventListener("change", render);
+  [ui.chipAll, ui.chipActive, ui.chipInactive].forEach((chip) => {
+    chip.addEventListener("click", () => {
+      state.activeFilter = chip.dataset.activeFilter;
+      render();
+    });
+  });
 
   ui.tableBody.addEventListener("click", (event) => {
     const button = event.target.closest("button[data-action]");

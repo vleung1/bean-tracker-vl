@@ -25,6 +25,7 @@ body {
   max-width: 1100px;
   margin: 0 auto;
   padding: 40px 28px 80px;
+  width: 100%;
 }
 
 .topbar {
@@ -37,6 +38,23 @@ body {
   border: 1px solid var(--border);
   border-radius: 22px;
   box-shadow: var(--shadow);
+  width: 100%;
+}
+
+.brand {
+  flex: 1 1 360px;
+  min-width: 0;
+}
+
+.espresso-art {
+  flex: 0 0 240px;
+  max-width: 240px;
+}
+
+.espresso-art svg {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 .brand h1 {
@@ -140,6 +158,32 @@ button.ghost.danger {
   box-shadow: var(--shadow);
 }
 
+.active-chips {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.chip {
+  background: #f3e4d3;
+  color: var(--ink);
+  border: 1px solid #e4ccae;
+  padding: 8px 14px;
+}
+
+.chip.is-selected {
+  background: #3c2a1f;
+  color: #fff6ed;
+  border-color: #3c2a1f;
+}
+
+.active-summary {
+  color: #5f4a36;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+}
+
 .controls label {
   display: block;
   font-size: 12px;
@@ -214,6 +258,18 @@ tbody td {
   padding: 12px 8px;
   border-bottom: 1px solid #eee1d0;
   vertical-align: top;
+}
+
+tbody tr.row-active {
+  background: #fff5e9;
+}
+
+tbody tr.row-active td:first-child {
+  font-weight: 700;
+}
+
+tbody tr.row-inactive {
+  opacity: 0.72;
 }
 
 .row-actions {
@@ -315,9 +371,18 @@ tbody td {
 }
 
 @media (max-width: 900px) {
+  .page {
+    padding: 20px 16px 96px;
+  }
+
   .topbar {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .espresso-art {
+    max-width: 200px;
+    align-self: center;
   }
 
   .status {
@@ -327,5 +392,9 @@ tbody td {
   .status-actions {
     justify-content: flex-start;
     flex-wrap: wrap;
+  }
+
+  .controls {
+    grid-template-columns: 1fr;
   }
 }

@@ -20,7 +20,23 @@
         <div class="brand">
           <p class="eyebrow">Coffee Log</p>
           <h1>Coffee Bean Tracker</h1>
-          <p class="subtitle">Track beans, grind settings, and tasting notes without opening a sheet.</p>
+          <p class="subtitle">Track beans, grind settings, and tasting notes.</p>
+        </div>
+        <div class="espresso-art" aria-hidden="true">
+          <svg viewBox="0 0 220 160" role="img">
+            <defs>
+              <linearGradient id="cupFill" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#f3dcc2" />
+                <stop offset="100%" stop-color="#d9b287" />
+              </linearGradient>
+            </defs>
+            <ellipse cx="88" cy="58" rx="52" ry="20" fill="#402719" />
+            <ellipse cx="88" cy="60" rx="40" ry="12" fill="#6a4129" />
+            <rect x="34" y="58" width="108" height="56" rx="26" fill="url(#cupFill)" />
+            <path d="M142 74h20c14 0 22 8 22 20s-8 20-22 20h-20" fill="none" stroke="#d9b287" stroke-width="12" stroke-linecap="round" />
+            <ellipse cx="88" cy="118" rx="74" ry="14" fill="#dfc6a8" />
+            <path d="M66 28c-8-11 3-18 1-28M88 26c-8-11 3-18 1-28M110 28c-8-11 3-18 1-28" fill="none" stroke="#c58d57" stroke-width="6" stroke-linecap="round" />
+          </svg>
         </div>
         <div class="status">
           <div class="status-pill" id="status-pill">Connecting</div>
@@ -32,6 +48,12 @@
 
       <main class="content">
         <section class="controls">
+          <div class="active-chips" role="group" aria-label="Active filter">
+            <button id="chip-all" class="chip is-selected" data-active-filter="all" type="button">All</button>
+            <button id="chip-active" class="chip" data-active-filter="active" type="button">Active</button>
+            <button id="chip-inactive" class="chip" data-active-filter="inactive" type="button">Inactive</button>
+          </div>
+          <div class="active-summary" id="active-summary">Active: 0 | Inactive: 0</div>
           <div class="search">
             <label for="search-input">Search</label>
             <input id="search-input" type="search" placeholder="Bean name or notes" />
@@ -41,12 +63,6 @@
             <select id="roast-filter">
               <option value="">All roasts</option>
             </select>
-          </div>
-          <div class="filters inline">
-            <label>
-              <input id="notes-filter" type="checkbox" />
-              Has notes
-            </label>
           </div>
           <div class="filters">
             <label for="sort-select">Sort</label>
