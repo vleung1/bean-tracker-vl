@@ -38,16 +38,7 @@
             <path d="M66 28c-8-11 3-18 1-28M88 26c-8-11 3-18 1-28M110 28c-8-11 3-18 1-28" fill="none" stroke="#c58d57" stroke-width="6" stroke-linecap="round" />
           </svg>
         </div>
-        <div class="status">
-          <div class="status-pill" id="status-pill">Connecting</div>
-          <div class="status-actions">
-            <button id="btn-refresh" class="ghost">Refresh</button>
-          </div>
-        </div>
-      </header>
-
-      <main class="content">
-        <section class="controls">
+        <section class="controls top-controls">
           <div class="active-chips" role="group" aria-label="Active filter">
             <button id="chip-all" class="chip is-selected" data-active-filter="all" type="button">All</button>
             <button id="chip-active" class="chip" data-active-filter="active" type="button">Active</button>
@@ -74,7 +65,9 @@
             </select>
           </div>
         </section>
+      </header>
 
+      <main class="content">
         <section class="table-panel">
           <div class="table-header">
             <h2>Beans</h2>

@@ -149,7 +149,7 @@ button.ghost.danger {
 }
 
 .content {
-  margin-top: 28px;
+  margin-top: 20px;
   display: grid;
   gap: 24px;
 }
@@ -163,6 +163,15 @@ button.ghost.danger {
   border-radius: 18px;
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
+}
+
+.top-controls {
+  grid-column: 1 / -1;
+  margin-top: 2px;
+  padding: 14px 0 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 
 .active-chips {
@@ -425,6 +434,11 @@ body.view-only .table-wrap td:last-child {
 
   .controls {
     grid-template-columns: 1fr;
+  }
+
+  .top-controls {
+    margin-top: 0;
+    padding-top: 8px;
   }
 
   .active-chips,

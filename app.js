@@ -59,7 +59,9 @@ function isEditorMode() {
 }
 
 function setStatus(text) {
-  ui.statusPill.textContent = text;
+  if (ui.statusPill) {
+    ui.statusPill.textContent = text;
+  }
 }
 
 function setOffline(isOffline) {
@@ -71,13 +73,17 @@ function setOffline(isOffline) {
     if (ui.add) {
       ui.add.disabled = true;
     }
-    ui.refresh.disabled = true;
+    if (ui.refresh) {
+      ui.refresh.disabled = true;
+    }
   } else {
     setStatus(editorMode ? "Connected (Editor)" : "Connected (View only)");
     if (ui.add) {
       ui.add.disabled = !editorMode;
     }
-    ui.refresh.disabled = false;
+    if (ui.refresh) {
+      ui.refresh.disabled = false;
+    }
   }
 }
 
@@ -341,7 +347,9 @@ function escapeHtml(value) {
 }
 
 function registerEvents() {
-  ui.refresh.addEventListener("click", () => loadAllData().catch(showError));
+  if (ui.refresh) {
+    ui.refresh.addEventListener("click", () => loadAllData().catch(showError));
+  }
   if (ui.add) {
     ui.add.addEventListener("click", () => openModal());
   }
