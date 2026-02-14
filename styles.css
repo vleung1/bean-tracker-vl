@@ -447,20 +447,30 @@ body.view-only .table-wrap td:last-child {
   }
 
   thead th {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 0.08em;
-    padding: 8px 4px;
+    padding: 8px 6px;
   }
 
   tbody td {
-    font-size: 13px;
-    padding: 8px 4px;
-    overflow-wrap: anywhere;
-    word-break: break-word;
+    font-size: 14px;
+    padding: 9px 6px;
+    word-break: normal;
   }
 
   .notes {
     max-width: none;
     -webkit-line-clamp: 3;
+    overflow-wrap: anywhere;
+  }
+
+  tbody td:nth-child(2),
+  tbody td:nth-child(6) {
+    overflow-wrap: anywhere;
+  }
+
+  .row-actions button {
+    white-space: nowrap;
+    min-width: 52px;
   }
 }
