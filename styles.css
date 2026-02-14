@@ -442,39 +442,36 @@ body.view-only .table-wrap td:last-child {
     padding: 14px 12px 18px;
   }
 
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   table {
-    table-layout: fixed;
+    table-layout: auto;
+    min-width: 760px;
   }
 
   thead th {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 0.08em;
     padding: 8px 6px;
+    white-space: nowrap;
   }
 
   tbody td {
     font-size: 12px;
     padding: 8px 5px;
-    word-break: normal;
+    white-space: nowrap;
   }
 
   .notes {
-    max-width: none;
-    -webkit-line-clamp: 2;
-    overflow-wrap: anywhere;
-  }
-
-  tbody td:nth-child(2),
-  tbody td:nth-child(6) {
-    overflow-wrap: anywhere;
-  }
-
-  tbody td:nth-child(1),
-  tbody td:nth-child(3),
-  tbody td:nth-child(4),
-  tbody td:nth-child(5),
-  tbody td:nth-child(7) {
+    display: block;
+    max-width: 220px;
+    -webkit-line-clamp: 1;
     white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
   }
 
   .row-actions button {
