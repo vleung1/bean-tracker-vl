@@ -7,6 +7,7 @@ const state = {
   filteredRows: [],
   editingRow: null,
   isOffline: false,
+  beanLabel: "Bean",
 };
 
 const ui = {
@@ -20,13 +21,15 @@ const ui = {
   summary: document.getElementById("summary"),
   tableBody: document.getElementById("table-body"),
   empty: document.getElementById("empty-state"),
+  colBeanLabel: document.getElementById("col-bean-label"),
+  fieldBeanLabel: document.getElementById("field-bean-label"),
   modal: document.getElementById("modal"),
   modalTitle: document.getElementById("modal-title"),
   modalHint: document.getElementById("modal-hint"),
   close: document.getElementById("btn-close"),
   form: document.getElementById("bean-form"),
   delete: document.getElementById("btn-delete"),
-  fieldDecaf: document.getElementById("field-decaf"),
+  fieldBean: document.getElementById("field-decaf"),
   fieldGrind: document.getElementById("field-grind"),
   fieldTaste: document.getElementById("field-taste"),
   fieldRoast: document.getElementById("field-roast"),
@@ -100,10 +103,11 @@ async function apiRequest(action, payload = {}) {
 
 async function loadAllData() {
   const data = await apiRequest("list");
+  state.beanLabel = String(data.beanLabel || "Bean");
   state.rows = (data.rows || []).map((row) => ({
     rowIndex: Number(row.rowIndex),
     Active: normalizeActive(row.Active),
-    Decaf: row.Decaf || "",
+    Bean: row.Bean || row.Decaf || "",
     "Grind setting": row["Grind setting"] || "",
     Notes: row.Notes || "",
     Taste: row.Taste || "",
@@ -122,7 +126,7 @@ function applyFilters() {
   state.filteredRows = state.rows.filter((row) => {
     const matchesQuery =
       !query ||
-      row.Decaf.toLowerCase().includes(query) ||
+      row.Bean.toLowerCase().includes(query) ||
       row.Notes.toLowerCase().includes(query);
     const matchesRoast = !roast || row.Roast === roast;
     const matchesNotes = !notesOnly || row.Notes.trim().length > 0;
@@ -143,9 +147,14 @@ function applyFilters() {
     if (sortKey === "roast") {
       return String(a.Roast).localeCompare(String(b.Roast));
     }
-    return String(a.Decaf).localeCompare(String(b.Decaf));
+    return String(a.Bean).localeCompare(String(b.Bean));
   });
   state.filteredRows = sorted;
+}
+
+function applyColumnLabels() {
+  ui.colBeanLabel.textContent = state.beanLabel;
+  ui.fieldBeanLabel.textContent = state.beanLabel;
 }
 
 function updateRoastFilter() {
@@ -162,6 +171,7 @@ function updateRoastFilter() {
 }
 
 function render() {
+  applyColumnLabels();
   updateRoastFilter();
   applyFilters();
 
@@ -170,7 +180,7 @@ function render() {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${row.Active ? "Active" : "Inactive"}</td>
-      <td>${escapeHtml(row.Decaf)}</td>
+      <td>${escapeHtml(row.Bean)}</td>
       <td>${escapeHtml(row["Grind setting"])}</td>
       <td>${escapeHtml(row.Taste)}</td>
       <td>${escapeHtml(row.Roast)}</td>
@@ -192,7 +202,7 @@ function render() {
 function openModal(row) {
   state.editingRow = row || null;
   ui.modalTitle.textContent = row ? "Edit bean" : "Add bean";
-  ui.fieldDecaf.value = row ? row.Decaf : "";
+  ui.fieldBean.value = row ? row.Bean : "";
   ui.fieldGrind.value = row ? row["Grind setting"] : "";
   ui.fieldTaste.value = row ? row.Taste : "";
   ui.fieldRoast.value = row ? row.Roast : "";
@@ -210,9 +220,11 @@ function closeModal() {
 }
 
 function getRowData() {
+  const beanValue = ui.fieldBean.value.trim();
   return {
     Active: ui.fieldActive.value,
-    Decaf: ui.fieldDecaf.value.trim(),
+    Bean: beanValue,
+    Decaf: beanValue,
     "Grind setting": ui.fieldGrind.value.trim(),
     Notes: ui.fieldNotes.value.trim(),
     Taste: ui.fieldTaste.value.trim(),

@@ -87,6 +87,7 @@ function listRows_(sheet) {
   if (headers[0] !== "Active") {
     return json_({ ok: false, error: "Column A header must be 'Active'" });
   }
+  const beanLabel = String(headers[1] || "Bean").trim() || "Bean";
 
   const rows = [];
   for (let i = 1; i < values.length; i += 1) {
@@ -94,6 +95,7 @@ function listRows_(sheet) {
     rows.push({
       rowIndex: i + 1,
       Active: row[0] || "TRUE",
+      Bean: row[1] || "",
       Decaf: row[1] || "",
       "Grind setting": row[2] || "",
       Notes: row[3] || "",
@@ -102,7 +104,7 @@ function listRows_(sheet) {
     });
   }
 
-  return json_({ ok: true, rows: rows });
+  return json_({ ok: true, beanLabel: beanLabel, rows: rows });
 }
 
 function addRow_(sheet, row) {
@@ -135,7 +137,7 @@ function deleteRow_(sheet, rowIndex) {
 function sanitizeRow_(row) {
   return [
     normalizeActive_(row.Active),
-    safe_(row.Decaf),
+    safe_(row.Bean || row.Decaf),
     safe_(row["Grind setting"]),
     safe_(row.Notes),
     safe_(row.Taste),
