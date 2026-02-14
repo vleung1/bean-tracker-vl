@@ -66,23 +66,32 @@ function setOffline(isOffline) {
 
 async function apiRequest(action, payload = {}) {
   const config = getConfig();
-  const response = await fetch(config.API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8",
-    },
-    body: JSON.stringify({
-      token: config.API_TOKEN,
-      action,
-      ...payload,
-    }),
+  const url = new URL(config.API_URL);
+  url.searchParams.set("token", config.API_TOKEN);
+  url.searchParams.set("action", action);
+  if (typeof payload.rowIndex !== "undefined") {
+    url.searchParams.set("rowIndex", String(payload.rowIndex));
+  }
+  if (payload.row) {
+    url.searchParams.set("row", JSON.stringify(payload.row));
+  }
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    cache: "no-store",
   });
 
   if (!response.ok) {
     throw new Error(`Request failed (${response.status})`);
   }
 
-  const data = await response.json();
+  const text = await response.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (error) {
+    throw new Error("Backend returned non-JSON response. Check Apps Script deployment settings.");
+  }
   if (!data.ok) {
     throw new Error(data.error || "Unknown backend error");
   }

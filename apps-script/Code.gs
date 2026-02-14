@@ -30,6 +30,8 @@ function route_(payload) {
   }
 
   const action = String(payload.action || "").toLowerCase();
+  const row = parseRow_(payload.row);
+  const rowIndex = payload.rowIndex;
   if (!action) {
     return json_({ ok: false, error: "Missing action" });
   }
@@ -43,16 +45,30 @@ function route_(payload) {
     return listRows_(sheet);
   }
   if (action === "add") {
-    return addRow_(sheet, payload.row || {});
+    return addRow_(sheet, row);
   }
   if (action === "update") {
-    return updateRow_(sheet, payload.rowIndex, payload.row || {});
+    return updateRow_(sheet, rowIndex, row);
   }
   if (action === "delete") {
-    return deleteRow_(sheet, payload.rowIndex);
+    return deleteRow_(sheet, rowIndex);
   }
 
   return json_({ ok: false, error: "Unsupported action" });
+}
+
+function parseRow_(rawRow) {
+  if (!rawRow) {
+    return {};
+  }
+  if (typeof rawRow === "string") {
+    try {
+      return JSON.parse(rawRow);
+    } catch (err) {
+      return {};
+    }
+  }
+  return rawRow;
 }
 
 function getSheet_() {
