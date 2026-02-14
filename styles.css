@@ -15,8 +15,15 @@
   box-sizing: border-box;
 }
 
+html {
+  width: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
+  width: 100%;
+  overflow-x: hidden;
   background: radial-gradient(circle at top left, #fff3de 0%, #f4efe7 45%, #efe6db 100%);
   color: var(--ink);
 }
@@ -250,6 +257,7 @@ button.ghost.danger {
 
 .table-wrap {
   overflow-x: auto;
+  max-width: 100%;
 }
 
 table {
