@@ -1,6 +1,6 @@
 "use strict";
 
-const REQUIRED_CONFIG_KEYS = ["API_URL", "API_TOKEN"];
+const REQUIRED_CONFIG_KEYS = ["API_URL"];
 
 const state = {
   rows: [],
@@ -49,8 +49,13 @@ function getConfig() {
   }
   return {
     API_URL: config.API_URL,
-    API_TOKEN: config.API_TOKEN,
+    API_TOKEN: config.API_TOKEN || "",
+    APP_MODE: config.APP_MODE || "editor",
   };
+}
+
+function isEditorMode() {
+  return getConfig().APP_MODE === "editor";
 }
 
 function setStatus(text) {
@@ -60,13 +65,18 @@ function setStatus(text) {
 function setOffline(isOffline) {
   state.isOffline = isOffline;
   document.body.classList.toggle("offline", isOffline);
+  const editorMode = isEditorMode();
   if (isOffline) {
     setStatus("Offline (cached)");
-    ui.add.disabled = true;
+    if (ui.add) {
+      ui.add.disabled = true;
+    }
     ui.refresh.disabled = true;
   } else {
-    setStatus("Connected");
-    ui.add.disabled = false;
+    setStatus(editorMode ? "Connected (Editor)" : "Connected (View only)");
+    if (ui.add) {
+      ui.add.disabled = !editorMode;
+    }
     ui.refresh.disabled = false;
   }
 }
@@ -74,7 +84,9 @@ function setOffline(isOffline) {
 async function apiRequest(action, payload = {}) {
   const config = getConfig();
   const url = new URL(config.API_URL);
-  url.searchParams.set("token", config.API_TOKEN);
+  if (config.API_TOKEN) {
+    url.searchParams.set("token", config.API_TOKEN);
+  }
   url.searchParams.set("action", action);
   if (typeof payload.rowIndex !== "undefined") {
     url.searchParams.set("rowIndex", String(payload.rowIndex));
@@ -190,6 +202,7 @@ function updateRoastFilter() {
 }
 
 function render() {
+  const editorMode = isEditorMode();
   applyColumnLabels();
   renderActiveSummary();
   renderActiveChips();
@@ -209,7 +222,7 @@ function render() {
       <td><div class="notes">${escapeHtml(row.Notes)}</div></td>
       <td>
         <div class="row-actions">
-          <button data-action="edit" data-row="${row.rowIndex}" class="ghost">Edit</button>
+          ${editorMode ? `<button data-action="edit" data-row="${row.rowIndex}" class="ghost">Edit</button>` : ""}
         </div>
       </td>
     `;
@@ -222,6 +235,9 @@ function render() {
 }
 
 function openModal(row) {
+  if (!isEditorMode()) {
+    return;
+  }
   state.editingRow = row || null;
   ui.modalTitle.textContent = row ? "Edit bean" : "Add bean";
   ui.fieldBean.value = row ? row.Bean : "";
@@ -255,11 +271,17 @@ function getRowData() {
 }
 
 async function addRow() {
+  if (!isEditorMode()) {
+    throw new Error("Read-only mode");
+  }
   await apiRequest("add", { row: getRowData() });
   await loadAllData();
 }
 
 async function updateRow() {
+  if (!isEditorMode()) {
+    throw new Error("Read-only mode");
+  }
   if (!state.editingRow) {
     return;
   }
@@ -271,6 +293,9 @@ async function updateRow() {
 }
 
 async function deleteRow() {
+  if (!isEditorMode()) {
+    throw new Error("Read-only mode");
+  }
   if (!state.editingRow) {
     return;
   }
@@ -317,7 +342,9 @@ function escapeHtml(value) {
 
 function registerEvents() {
   ui.refresh.addEventListener("click", () => loadAllData().catch(showError));
-  ui.add.addEventListener("click", () => openModal());
+  if (ui.add) {
+    ui.add.addEventListener("click", () => openModal());
+  }
   ui.close.addEventListener("click", closeModal);
   ui.modal.addEventListener("click", (event) => {
     if (event.target === ui.modal) {
@@ -369,6 +396,9 @@ function registerEvents() {
   });
 
   ui.tableBody.addEventListener("click", (event) => {
+    if (!isEditorMode()) {
+      return;
+    }
     const button = event.target.closest("button[data-action]");
     if (!button) {
       return;
@@ -424,6 +454,10 @@ function init() {
   registerEvents();
   initCacheView();
   registerServiceWorker();
+  document.body.classList.toggle("view-only", !isEditorMode());
+  if (ui.add && !isEditorMode()) {
+    ui.add.classList.add("hidden");
+  }
   setOffline(!navigator.onLine);
 
   if (!state.isOffline) {

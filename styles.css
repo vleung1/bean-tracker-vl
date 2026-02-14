@@ -333,6 +333,11 @@ tbody tr.row-inactive {
   display: none;
 }
 
+body.view-only .table-wrap th:last-child,
+body.view-only .table-wrap td:last-child {
+  display: none;
+}
+
 .modal-card {
   width: min(520px, 90vw);
   background: #fff;

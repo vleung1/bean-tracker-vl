@@ -1,46 +1,79 @@
 # Coffee Bean Tracker
 
-Lightweight PWA for tracking beans, grind settings, and tasting notes from one Google Sheet.
+Two URLs are supported:
+- Public read-only: `/`
+- Private editor: `/editor/`
 
-## Current Architecture
-- Frontend (`index.html`, `app.js`) calls an Apps Script web endpoint.
-- Apps Script reads/writes sheet rows.
-- No Google sign-in flow in the app UI.
+## URL Model
+- Public URL: [https://vleung1.github.io/bean-tracker-vl/](https://vleung1.github.io/bean-tracker-vl/)
+- Editor URL: [https://vleung1.github.io/bean-tracker-vl/editor/](https://vleung1.github.io/bean-tracker-vl/editor/)
 
-## 1) Sheet Requirements
-Use this exact header row in tab `ECM`:
+## Sheet Requirements
+Use this header row in tab `ECM`:
 
-`Active | Decaf | Grind setting | Notes | Taste | Roast`
+`Active | Bean | Grind setting | Notes | Taste | Roast`
 
-## 2) Deploy Apps Script Backend
-1. Open [script.new](https://script.new) while signed into your Google account.
-2. Replace default code with `/Users/vleung1/Documents/New project/apps-script/Code.gs`.
-3. In `SETTINGS`, fill:
+`Bean` can also be `Decaf`; the app will map either label.
+
+## Backend Setup (Apps Script)
+Create two Apps Script web app deployments.
+
+### 1) Public Read-only Deployment
+1. Open [script.new](https://script.new).
+2. Paste `/Users/vleung1/Documents/New project/apps-script/Code.public.gs`.
+3. Fill `SETTINGS`:
 - `SHEET_ID`
-- `SHEET_NAME` (currently `ECM`)
-- `API_TOKEN` (long random string)
-4. Save.
-5. Deploy -> New deployment -> Type: `Web app`.
-6. Execute as: `Me`.
-7. Who has access: `Anyone`.
-8. Deploy and copy the `Web app URL`.
+- `SHEET_NAME`
+- `PUBLIC_TOKEN` (optional; leave blank for fully public reads)
+4. Deploy as Web app:
+- Execute as: `Me`
+- Who has access: `Anyone`
+5. Copy the `/exec` URL (this is `PUBLIC_API_URL`).
 
-## 3) Configure Frontend
+### 2) Editor Deployment (CRUD)
+1. Create another Apps Script project.
+2. Paste `/Users/vleung1/Documents/New project/apps-script/Code.editor.gs`.
+3. Fill `SETTINGS`:
+- `SHEET_ID`
+- `SHEET_NAME`
+- `API_TOKEN` (required, long random string)
+4. Deploy as Web app:
+- Execute as: `Me`
+- Who has access: `Anyone`
+5. Copy the `/exec` URL (this is `EDITOR_API_URL`).
+
+## Frontend Config
+
+### Public (`/`)
 Edit `/Users/vleung1/Documents/New project/config.js`:
 
 ```js
 window.CONFIG = {
-  API_URL: "https://script.google.com/macros/s/DEPLOYMENT_ID/exec",
-  API_TOKEN: "same-token-used-in-apps-script"
+  API_URL: "PUBLIC_API_URL",
+  API_TOKEN: "PUBLIC_TOKEN_IF_USED",
+  APP_MODE: "public"
 };
 ```
 
-## 4) Deploy Frontend
+### Editor (`/editor/`)
+Edit `/Users/vleung1/Documents/New project/editor/config.js`:
+
+```js
+window.CONFIG = {
+  API_URL: "EDITOR_API_URL",
+  API_TOKEN: "EDITOR_API_TOKEN",
+  APP_MODE: "editor"
+};
+```
+
+## Deploy Frontend
 1. Commit and push to `main`.
-2. GitHub Pages serves from root (`/`).
-3. Open [https://vleung1.github.io/bean-tracker-vl/](https://vleung1.github.io/bean-tracker-vl/).
+2. GitHub Pages serves from root.
+3. Visit public URL for read-only sharing.
+4. Use `/editor/` for private edits.
 
 ## Notes
-- App caches last successful dataset for offline read.
-- Add/Edit/Delete disabled while offline.
-- If you change Apps Script code later, create a new deployment version and update `API_URL` only if deployment ID changes.
+- Public UI hides Add/Edit/Delete controls.
+- Editor UI enables Add/Edit/Delete controls.
+- If Apps Script code changes, deploy a new version.
+- If mobile shows stale UI, clear Safari site data for `vleung1.github.io`.

@@ -1,7 +1,9 @@
-const CACHE_NAME = "coffee-tracker-v2";
+const CACHE_NAME = "coffee-tracker-v3";
 const ASSETS = [
   "./",
   "./index.html",
+  "./editor/index.html",
+  "./editor/config.js",
   "./styles.css",
   "./app.js",
   "./manifest.json",
