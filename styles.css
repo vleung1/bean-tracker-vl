@@ -437,4 +437,30 @@ body.view-only .table-wrap td:last-child {
     justify-content: flex-start;
     white-space: normal;
   }
+
+  .table-panel {
+    padding: 14px 12px 18px;
+  }
+
+  table {
+    table-layout: fixed;
+  }
+
+  thead th {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    padding: 8px 4px;
+  }
+
+  tbody td {
+    font-size: 13px;
+    padding: 8px 4px;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .notes {
+    max-width: none;
+    -webkit-line-clamp: 3;
+  }
 }
